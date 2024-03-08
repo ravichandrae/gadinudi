@@ -7,7 +7,7 @@ $(document).ready(function () {
             down: []
         }
     };
-    //TODO: Get this data from backend and replace hardcoded text, this is only for testing
+
     let gadiData = 'చి|లు|ము|#|కం|డూ|తి|#|గుం|భ|నం|#|వె|ర|గు' + '\n' +
         'త్రాం|#|క్త|#|పం|#|#|#|#|#|ది|#|ట్ట|#|రు' + '\n' +
         'గ|ద|#|#|#|#|సిం|#|గ|#|#|#|#|కూ|తు' + '\n' +
@@ -196,7 +196,7 @@ $(document).ready(function () {
             if (cell.type === 'block') {
                 td.addClass('block');
             } else { // cell.type === 'free'
-                let input = $('<input type="text" maxlength="1">').val(cell.content);
+                let input = $('<input type="text" maxlength="6">').val(cell.content);
                 td.append(input);
 
                 if (isStartOfWord(rowIndex, cellIndex, crosswordData.grid)) {
@@ -257,4 +257,43 @@ $(document).ready(function () {
     crosswordData.clues.down.forEach(clue => {
         $('#downClues ul').append(`<li>${clue.number}. ${clue.clue}</li>`);
     });
+
+    // Function to handle arrow key navigation
+    function handleArrowKeyNavigation(event) {
+        const key = event.keyCode || event.which;
+        const arrows = { left: 37, up: 38, right: 39, down: 40 };
+        const currentInput = $(event.target);
+        const currentTd = currentInput.closest('td');
+        const currentTr = currentTd.closest('tr');
+        let targetInput;
+
+        switch(key) {
+            case arrows.right:
+                // Find next input in the row
+                targetInput = currentTd.nextAll('td').find('input:text:first');
+                break;
+            case arrows.left:
+                // Find previous input in the row
+                targetInput = currentTd.prevAll('td').find('input:text:first');
+                break;
+            case arrows.down:
+                // Find input in the same column in the next row
+                const columnIndexDown = currentTd.index();
+                targetInput = currentTr.next('tr').find(`td:eq(${columnIndexDown}) input:text:first`);
+                break;
+            case arrows.up:
+                // Find input in the same column in the previous row
+                const columnIndexUp = currentTd.index();
+                targetInput = currentTr.prev('tr').find(`td:eq(${columnIndexUp}) input:text:first`);
+                break;
+        }
+
+        if (targetInput && targetInput.length > 0) {
+            targetInput.focus();
+            event.preventDefault(); // Prevent default arrow key behavior (scrolling)
+        }
+    }
+
+    // Attach the event handler to all input fields within the crossword grid
+    $('#crossword input[type="text"]').keydown(handleArrowKeyNavigation);
 });
