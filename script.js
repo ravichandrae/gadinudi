@@ -192,11 +192,12 @@ $(document).ready(function () {
     crosswordData.grid.forEach((row, rowIndex) => {
         let tr = $('<tr></tr>');
         row.forEach((cell, cellIndex) => {
+            let cellId = `${rowIndex}_${cellIndex}`;
             let td = $('<td></td>');
             if (cell.type === 'block') {
                 td.addClass('block');
             } else { // cell.type === 'free'
-                let input = $('<input type="text" maxlength="6">').val(cell.content);
+                let input = $('<input type="text" maxlength="6">').val(cell.content).attr('id', cellId);
                 td.append(input);
 
                 if (isStartOfWord(rowIndex, cellIndex, crosswordData.grid)) {
@@ -263,6 +264,10 @@ $(document).ready(function () {
         const key = event.keyCode || event.which;
         const arrows = { left: 37, up: 38, right: 39, down: 40 };
         const currentInput = $(event.target);
+        let currentInputId = currentInput.attr('id');
+        let currentInputRowColumns = currentInputId.split('_');
+        let row = Number(currentInputRowColumns[0]);
+        let column = Number(currentInputRowColumns[1]);
         const currentTd = currentInput.closest('td');
         const currentTr = currentTd.closest('tr');
         let targetInput;
@@ -271,20 +276,24 @@ $(document).ready(function () {
             case arrows.right:
                 // Find next input in the row
                 targetInput = currentTd.nextAll('td').find('input:text:first');
+                targetInput = findNextFreeCellRight(row, column, crosswordData.grid);
                 break;
             case arrows.left:
                 // Find previous input in the row
                 targetInput = currentTd.prevAll('td').find('input:text:first');
+                targetInput = findNextFreeCellLeft(row, column, crosswordData.grid);
                 break;
             case arrows.down:
                 // Find input in the same column in the next row
                 const columnIndexDown = currentTd.index();
                 targetInput = currentTr.next('tr').find(`td:eq(${columnIndexDown}) input:text:first`);
+                targetInput = findNextFreeCellDown(row, column, crosswordData.grid);
                 break;
             case arrows.up:
                 // Find input in the same column in the previous row
                 const columnIndexUp = currentTd.index();
                 targetInput = currentTr.prev('tr').find(`td:eq(${columnIndexUp}) input:text:first`);
+                targetInput = findNextFreeCellUp(row, column, crosswordData.grid);
                 break;
         }
 
@@ -293,6 +302,47 @@ $(document).ready(function () {
             event.preventDefault(); // Prevent default arrow key behavior (scrolling)
         }
     }
+
+    function findNextFreeCellRight(row, column, grid) {
+        let nextRightCellIndex = column;
+        while(true) {
+            nextRightCellIndex = (nextRightCellIndex + 1) % grid.length;
+            if(grid[row][nextRightCellIndex].type === 'free') {
+                return $('#' + row + '_' + nextRightCellIndex);
+            }
+        }
+    }
+
+    function findNextFreeCellLeft(row, column, grid) {
+        let nextLeftCellIndex = column;
+        while(true) {
+            nextLeftCellIndex = (nextLeftCellIndex - 1 + grid.length) % grid.length;
+            if(grid[row][nextLeftCellIndex].type === 'free') {
+                return $('#' + row + '_' + nextLeftCellIndex);
+            }
+        }
+    }
+
+    function findNextFreeCellDown(row, column, grid) {
+        let nextDownCellIndex = row;
+        while(true) {
+            nextDownCellIndex = (nextDownCellIndex + 1) % grid.length;
+            if(grid[nextDownCellIndex][column].type === 'free') {
+                return $('#' + nextDownCellIndex + '_' + column);
+            }
+        }
+    }
+
+    function findNextFreeCellUp(row, column, grid) {
+        let nextUpCellIndex = row;
+        while(true) {
+            nextUpCellIndex = (nextUpCellIndex - 1 + grid.length) % grid.length;
+            if(grid[nextUpCellIndex][column].type === 'free') {
+                return $('#' + nextUpCellIndex + '_' + column);
+            }
+        }
+    }
+
 
     // Attach the event handler to all input fields within the crossword grid
     $('#crossword input[type="text"]').keydown(handleArrowKeyNavigation);
